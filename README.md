@@ -3,9 +3,9 @@ Leffakirjasto
 
 WUT?
 --------------
-1) Syötä leffasi leffat.txt -tiedostoon
-2) ??? 
-3) Profit!
+1. Syötä leffasi leffat.txt -tiedostoon
+2. ??? 
+3. Profit!
 
 Kuvat, arviot ja plotlinet noudetaan IMDB:stä hyödyntäen My Movie API -rajapintaa. 
 
@@ -16,4 +16,6 @@ TODO
  * In English maybe
 
 
-Lisenssi CC BY-NC-SA. 
+Lisenssi
+--------------
+Tee lähes mitä haluat, lisenssi CC BY-NC-SA. Pyydä jos haluat jotain muuta, ja kiva olisi muutenkin tietää jos käyttö kiinnostaa.
