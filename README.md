@@ -18,6 +18,8 @@ http://artoliukkonen.net/leffat/
 TODO
 --------------
  * parempi järjestys arvosanan ja genren mukaan
+ * Localstorage
+ * Lokaali API joka cachettaa My Movie API:n tulokset
  * In English maybe
 
 
