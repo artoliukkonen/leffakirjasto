@@ -10,6 +10,11 @@ WUT?
 Kuvat, arviot ja plotlinet noudetaan IMDB:stä hyödyntäen My Movie API -rajapintaa. 
 
 
+Demo
+--------------
+http://artoliukkonen.net/leffat/
+
+
 TODO
 --------------
  * parempi järjestys arvosanan ja genren mukaan
