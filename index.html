@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width" />
+<meta charset=utf-8 />
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
+<title>Leffakirjasto</title>
+<script type="text/template" id="movie">
+  <div class="movie row" data-genres="{5}">
+    <div style="float:left;width:20%;margin:2%">
+      <img src="{2}" style="width:50px;" />
+      <div class="three columns rating">IMDB-arvio: {4}/10</div>
+    </div>
+    <div>
+      <div class="three columns title"><a href="{0}">{3}</a></div>
+      <div class="three columns plot">{1}</div>
+    </div>
+  </div>
+</script>
+<script>
+/* Magic to make {?} params work in template */
+String.prototype.format = function() {
+  var args = arguments;
+  return this.replace(/{(\d+)}/g, function(match, number) {
+    return typeof args[number] != 'undefined'
+      ? args[number]
+      : match
+    ;
+  });
+};
+</script>
+
+<!-- embedded styles - just to make it easy & you mad -->
+<style>
+html,body { font-family: Helvetica; font-size:12px; }
+a { color: black; text-decoration:none; font-weight:bold; font-size: 13px;}
+h1,p {clear: both; }
+#movies {
+  margin: 0 auto;
+  width: 1024px;
+  max-width: 100%;
+}
+.movie { float:left;
+width: 29%;
+height: 125px;
+border:1px solid gray;
+margin:1%;
+padding:1%;
+border-radius:5px;
+box-shadow: 0 0 8px 3px #ddd;
+}
+@media (max-width:800px) {
+  .movie {
+    width: 95%;
+  }
+}
+#indicator {
+  font-size: 16px;
+}
+</style>
+</head>
+<body>
+
+<div id="movies">
+<h1>Mun leffat (lista täydentyy vielä huimasti)</h1>
+<p>Kuvat, arviot ja plotlinet noudetaan IMDB:stä hyödyntäen My Movie API -rajapintaa. Featureina tulossa vielä parempi järjestys arvosanan ja genren mukaan.</p>
+<p>Tarkoitus on laittaa leffoja myyntiin ja tämän sivun ideana on helpottaa niiden listausta.</p>
+<p>Haluatko tällaisen itsellesikin? Siitä vaan, koodin lisenssi CC BY-NC-SA. Tekijä <a href="http://artoliukkonen.net">Arto Liukkonen</a></p>
+<div id="indicator">Haetaan elokuvia... Vielä <span></span> jäljellä.</div>
+
+<p>
+Genre: <select name="genre"><option value="0">Kaikki</option></select>
+</p>
+<!--
+<p>
+Arvio vähintään: <select name="rating">
+<option value="0">0</option>
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="3">3</option>
+<option value="4">4</option>
+<option value="5">5</option>
+<option value="6">6</option>
+<option value="7">7</option>
+<option value="8">8</option>
+<option value="9">9</option>
+<option value="10">10</option>
+</select>
+</p>
+-->
+</div>
+
+<script>
+
+// You using some lame browser? This one is for you
+if(!window.console) window.console = {};
+
+// Define My Movie API URL
+var queryurl = 'http://mymovieapi.com/?type=jsonp&plot=simple&episode=1&limit=1&yg=0&mt=none&lang=en-US&offset=&aka=simple&release=simple&business=0&tech=0&title=';
+$(function() {
+  // Load local txt movie file. One movie title per line
+  $.ajax({
+    url: 'leffat.txt',
+    dataType: 'html',
+    type: 'get',
+    success: function(d) {
+      var movies = d.split("\n");
+      fetchMovies(movies);
+    }
+  });
+  
+  $('select[name="genre"]').bind('change', function() {
+    val = $(this).val();
+    if(val==0) { $('.movie').show(); return; }
+    $('.movie').each(function() {
+      mygenres = $(this).data('genres');
+      
+      if(mygenres.indexOf(val)==-1) $(this).hide();
+      else $(this).show();
+    });
+  });
+});
+
+// We load movies in queue because My Movie API uses same JSONP function name so we would run to race issue otherwise
+$myQueue = $('<div />');
+genres = [];
+var fetchMovies = function(movies) {
+  $('#indicator span').html(movies.length);
+  $.each(movies, function(i,n) {
+    $myQueue.queue(function(next) {
+      // TODO: Use LocalStorage (with Modernizr) to speed this up
+      // TODO: Make tolerant for errors. Now script just ends if anything special happens
+      $.ajax({
+        dataType: 'jsonp',
+        jsonpCallback: 'imdbapi',
+        type: 'get',
+        contentType: 'application/json',
+        async: false,
+        url: queryurl+escape(n), // Build query URL with movie title in the end
+        success: function(d) {
+          console.log(d[0]); // Debugging. We just use 0 because usually it's what we want.
+          
+          $.each(d[0].genres, function(i,g) {
+            if($.inArray(g,genres)==-1) {
+              genres.push(g);
+            }
+          });
+          
+          printMovie(d[0]);
+          next(); // Move to next item in queue
+          
+          // Update loading incidator status
+          $('#indicator span').html($myQueue.queue().length);
+          if($myQueue.queue().length==0) {
+            $('#indicator').html('Kaikki elokuvat ladattu');
+            console.log(genres);
+            $.each(genres, function(i,g) {
+              $('select[name="genre"]').append('<option value="'+g+'">'+g+'</option>');
+            });
+            setTimeout(function() { $('#indicator').slideUp(); }, 3000);
+          }
+        }
+      });
+    });
+  });
+}
+
+var printMovie = function(m) {
+  // Load template
+  rowTemplate = $('#movie').html();
+  // Inject movie details to template
+  rowTemplate = rowTemplate.format(m.imdb_url,m.plot_simple,m.poster.cover,m.title,m.rating,m.genres.join(','));
+  // Append movie to list
+  $('#movies').append(rowTemplate);
+}
+</script>
+
+</body>
+</html>
